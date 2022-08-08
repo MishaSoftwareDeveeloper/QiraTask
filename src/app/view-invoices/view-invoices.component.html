@@ -1,0 +1,135 @@
+<p-toast position="center"></p-toast>
+<p-table [lazy]="true" 
+        [value]="invoices" 
+        [showCurrentPageReport]="true"
+        [rowHover]="true"
+        [filterDelay]="0" 
+        (onSort)="onSort($event)"
+        dataKey="id"
+        editMode="row"
+        responsiveLayout="scroll">
+    <ng-template pTemplate="caption">
+        <div class="flex">
+            <button pButton label="Clear" class="p-button-outlined" icon="pi pi-filter-slash" (click)="onClear()"></button>
+            <button pButton pRipple label="New" icon="pi pi-plus" class="save-btn p-button-success mr-2" (click)="openNew()"></button>
+        </div>
+    </ng-template>
+    <ng-template pTemplate="header">
+        <tr>
+            <!-- <th>Creation Date</th> -->
+            <th pSortableColumn="CreationDate">Creation Date <p-sortIcon field="CreationDate"></p-sortIcon></th>
+            <th>Change Date</th>
+            <th>Invoice number</th>
+            <th pSortableColumn="Status">Status <p-sortIcon field="Status"></p-sortIcon></th>
+            <th>Amount</th>
+            <th pSortableColumn="Payment">Payment method <p-sortIcon field="Payment"></p-sortIcon></th>
+        </tr>
+        <tr>
+            <th>
+                <div class="flex justify-content-between align-items-center">
+                    <input pInputText [(ngModel)]="createdDateInput" type="text" (input)="onFilter('CreationDate',$event)" />
+                </div>
+            </th>
+            <th></th>
+            <th></th>
+            <th>
+                <div class="flex justify-content-between align-items-center">
+                    <input pInputText [(ngModel)]="statusInput" type="text" (input)="onFilter('Status',$event)" />
+                </div>
+            </th>
+            <th></th>
+            <th>
+                <div class="flex justify-content-between align-items-center">
+                    <input pInputText [(ngModel)]="paymentInput" type="text" (input)="onFilter('Payment',$event)" />
+                </div>
+            </th>
+            <th style="width:8rem"></th>
+        </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-invoice let-editing="editing" let-ri="rowIndex">
+        <tr [pEditableRow]="invoice">
+            <td>{{invoice.creationDate | date:'dd/MM/yyyy'}}</td>
+            <td>{{invoice.changeDate | date:'dd/MM/yyyy' || 'n/a'}}</td>
+            <td>
+                <p-cellEditor>
+                    <ng-template pTemplate="input">
+                        <p-inputNumber [(ngModel)]="invoice.number"></p-inputNumber>
+                    </ng-template>
+                    <ng-template pTemplate="output">
+                        {{invoice.number}}
+                    </ng-template>
+                </p-cellEditor>
+            </td>
+            <td>
+                <p-cellEditor>
+                    <ng-template pTemplate="input">
+                        <p-dropdown [options]="statuses" appendTo="body" [(ngModel)]="invoice.status" [style]="{'width':'100%'}"></p-dropdown>
+                    </ng-template>
+                    <ng-template pTemplate="output">
+                        {{viewInvSrv.getStatusName(invoice.status)}}
+                    </ng-template>
+                </p-cellEditor>
+            </td>
+            <td>
+                <p-cellEditor>
+                    <ng-template pTemplate="input">
+                        <p-inputNumber [(ngModel)]="invoice.amount"></p-inputNumber>
+                    </ng-template>
+                    <ng-template pTemplate="output">
+                        {{invoice.amount}}
+                    </ng-template>
+                </p-cellEditor>
+            </td>
+            <td>
+                <p-cellEditor>
+                    <ng-template pTemplate="input">
+                        <p-dropdown [options]="payments" appendTo="body" [(ngModel)]="invoice.payment" [style]="{'width':'100%'}"></p-dropdown>
+                    </ng-template>
+                    <ng-template pTemplate="output">
+                        {{viewInvSrv.getPaymentName(invoice.payment)}}
+                    </ng-template>
+                </p-cellEditor>
+                
+            </td>
+            <td style="text-align:center">
+                <button *ngIf="!editing" pButton pRipple type="button" pInitEditableRow icon="pi pi-pencil" (click)="onRowEditInit(invoice)" class="p-button-rounded p-button-text"></button>
+                <button *ngIf="editing" pButton pRipple type="button" pSaveEditableRow icon="pi pi-check" (click)="onRowEditSave(invoice)" class="p-button-rounded p-button-text p-button-success mr-2"></button>
+                <button *ngIf="editing" pButton pRipple type="button" pCancelEditableRow icon="pi pi-times" (click)="onRowEditCancel(invoice, ri)" class="p-button-rounded p-button-text p-button-danger"></button>
+            </td>
+        </tr>
+    </ng-template>
+
+</p-table>
+<p-paginator [rows]="4" [totalRecords]="totalRecords" (onPageChange)="onPage($event)"></p-paginator>
+
+<p-dialog [(visible)]="showDialog" [style]="{width: '450px'}" header="Invoice Details" [modal]="true" styleClass="p-fluid">
+    <ng-template pTemplate="content">
+        <div class="field">
+            <label for="creationDate">Creation Date</label>
+            <h4 id="creationDate">{{invoiceToSave.creationDate | date:'dd/MM/yyyy' || 'n/a'}}</h4>
+        </div>
+        <div class="field">
+            <label for="invoiceNumber">Number</label>
+            <p-inputNumber id="invoiceNumber" [(ngModel)]="invoiceToSave.number"></p-inputNumber>
+            <small class="p-error" *ngIf="submitted && !invoiceToSave.number">Number is required.</small>
+        </div>
+        <div class="field">
+            <label for="status">Status of invoice processing</label>
+            <h4 id="status">New</h4>
+        </div>
+        <div class="field">
+            <label for="invoiceAmount">The amount in the invoice</label>
+            <p-inputNumber id="invoiceAmount" [(ngModel)]="invoiceToSave.amount"></p-inputNumber>
+            <small class="p-error" *ngIf="submitted && !invoiceToSave.amount">Amount is required.</small>
+        </div>
+        <div class="field">
+            <label for="pyment">Method of invoice payment</label>
+            <p-dropdown [(ngModel)]="invoiceToSave.payment" inputId="pyment" [options]="payments" placeholder="Select">
+            </p-dropdown>
+        </div>
+    </ng-template>
+    <ng-template pTemplate="footer">
+        <button pButton pRipple label="Cancel" icon="pi pi-times" class="p-button-text" (click)="hideDialog()"></button>
+        <button pButton pRipple label="Save" icon="pi pi-check" class="p-button-text" (click)="saveInvoice()"></button>
+    </ng-template>
+</p-dialog>

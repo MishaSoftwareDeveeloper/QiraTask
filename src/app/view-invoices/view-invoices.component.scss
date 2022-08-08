@@ -1,0 +1,10 @@
+.field{
+    margin-top: 10px;
+}
+.save-btn{
+    margin-left: 10px;
+}
+
+:host ::ng-deep .p-dialog .p-dialog-content{
+    min-height: 590px;
+}
